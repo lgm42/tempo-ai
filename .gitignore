@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+.playwright-mcp/
+# données téléchargées et modèles : régénérables, volumineux
+data/
+train/data/
+# documents officiels : liens dans train/docs/SOURCES.md
+train/docs/*.pdf
+train/docs/*.txt
