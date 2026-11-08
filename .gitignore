@@ -8,3 +8,4 @@ train/data/
 # documents officiels : liens dans train/docs/SOURCES.md
 train/docs/*.pdf
 train/docs/*.txt
+.pytest_cache/
