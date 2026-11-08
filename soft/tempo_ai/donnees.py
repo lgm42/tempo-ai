@@ -68,13 +68,13 @@ def table_tempo() -> pd.DataFrame:
 def calendrier(index: pd.DatetimeIndex) -> pd.DataFrame:
     fr = holidays.France(years=range(index.min().year, index.max().year + 2))
     c = pd.DataFrame(index=index)
-    c["dow"] = index.dayofweek
+    c["dow"] = index.day_of_week
     c["ferie"] = [d.date() in fr for d in index]
     debut_saison = pd.to_datetime([f"{d.year if d.month >= 9 else d.year - 1}-09-01" for d in index])
     c["saison"] = debut_saison.year
     c["jour_tempo"] = (index - debut_saison).days + 1  # 1 = 1er septembre
     c["mois"] = index.month
-    c["doy"] = index.dayofyear
+    c["doy"] = index.day_of_year
     return c
 
 
