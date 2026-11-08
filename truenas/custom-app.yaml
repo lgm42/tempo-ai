@@ -1,0 +1,28 @@
+# TrueNAS 25.x : Apps > Discover > ⋮ > Install via YAML (avant l'entrée au catalogue).
+# 1. Créer un dataset, par exemple /mnt/<pool>/apps/tempo-ai, propriétaire apps (568:568).
+# 2. Remplacer <pool> ci-dessous, choisir le port, puis coller ce fichier.
+services:
+  tempo-ai:
+    image: ghcr.io/lgm42/tempo-ai:0.1.0
+    user: "568:568"
+    restart: unless-stopped
+    ports:
+      - "31090:8080"
+    environment:
+      TZ: Europe/Paris
+      TEMPO_FORECAST_TIME: "12:00"
+      TEMPO_RETRAIN_DAYS: "30"
+      # TEMPO_API_TOKEN: "un-jeton-secret"   # protège les actions (recalcul, entraînement)
+    volumes:
+      - /mnt/<pool>/apps/tempo-ai:/data
+    security_opt:
+      - no-new-privileges=true
+    cap_drop:
+      - ALL
+
+x-portals:
+  - name: Web UI
+    scheme: http
+    host: 0.0.0.0
+    port: 31090
+    path: /
