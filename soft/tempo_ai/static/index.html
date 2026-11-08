@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tempo AI</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'><circle cx='4' cy='8' r='3' fill='%232563eb'/><circle cx='8' cy='8' r='3' fill='%23cbd5e1'/><circle cx='12' cy='8' r='3' fill='%23dc2626'/></svg>">
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #1d2330; --muted: #667085; --line: #e4e7ec;
+  --blue: #2563eb; --white: #e9edf3; --white-border: #b8c0cc; --red: #dc2626;
+  --ok: #15803d; --ko: #b42318; --accent: #2563eb;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12151b; --card: #1b2029; --text: #e6e9ef; --muted: #98a2b3; --line: #2b3240;
+    --blue: #3b82f6; --white: #e5e7eb; --white-border: #e5e7eb; --red: #ef4444;
+    --ok: #4ade80; --ko: #f87171; --accent: #60a5fa;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 20px 16px 48px; }
+header { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+h1 { font-size: 22px; margin: 0; }
+h2 { font-size: 15px; margin: 0 0 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .04em; }
+.chip { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.chip.ready { color: var(--ok); border-color: currentColor; }
+.chip.error { color: var(--ko); border-color: currentColor; }
+.spacer { flex: 1; }
+button { font: inherit; background: var(--accent); color: #fff; border: 0; border-radius: 8px; padding: 7px 14px; cursor: pointer; }
+button:disabled { opacity: .5; cursor: wait; }
+section { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+.days { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.day { border: 1px solid var(--line); border-radius: 10px; padding: 12px; }
+.day .lbl { font-size: 13px; color: var(--muted); }
+.day .date { font-weight: 600; margin-bottom: 8px; }
+.pill { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; }
+.dot { width: 18px; height: 18px; border-radius: 50%; display: inline-block; flex: none; border: 1px solid transparent; }
+.dot.blue { background: var(--blue); } .dot.red { background: var(--red); }
+.dot.white { background: var(--white); border-color: var(--white-border); }
+.dot.none { background: transparent; border: 1px dashed var(--muted); }
+.dot.small { width: 12px; height: 12px; }
+.src { font-size: 12px; color: var(--muted); margin-top: 6px; }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; margin-top: 10px; background: var(--line); }
+.bar span.blue { background: var(--blue); } .bar span.white { background: var(--white-border); } .bar span.red { background: var(--red); }
+.probs { font-size: 12px; color: var(--muted); margin-top: 4px; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.grid2 section { margin-bottom: 0; }
+table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+th, td { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); }
+th { font-size: 12px; color: var(--muted); font-weight: 600; }
+td.num, th.num { text-align: right; }
+.big { font-size: 30px; font-weight: 700; }
+.muted { color: var(--muted); font-size: 13px; }
+.kv { display: grid; grid-template-columns: auto 1fr; gap: 6px 14px; font-size: 14px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; }
+.ok { color: var(--ok); font-weight: 700; } .ko { color: var(--ko); font-weight: 700; }
+.stockbar { height: 10px; background: var(--line); border-radius: 5px; overflow: hidden; margin: 4px 0 12px; }
+.stockbar span { display: block; height: 100%; }
+.scroll { overflow-x: auto; }
+#err { color: var(--ko); }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Tempo AI</h1>
+    <span id="status" class="chip">…</span>
+    <span class="spacer"></span>
+    <span id="issued" class="muted"></span>
+    <button id="refresh" title="Recollecte les données et recalcule la prévision">Recalculer</button>
+  </header>
+  <p id="err"></p>
+
+  <section>
+    <h2>Couleurs</h2>
+    <div class="days" id="days"></div>
+  </section>
+
+  <div class="grid2">
+    <section>
+      <h2>Taux de réussite</h2>
+      <div><span class="big" id="rate-all">–</span> <span class="muted" id="rate-all-sub"></span></div>
+      <div class="scroll"><table id="acc"></table></div>
+      <p class="muted" id="tracking"></p>
+    </section>
+    <section>
+      <h2>Stocks restants</h2>
+      <div id="stock" class="muted">–</div>
+      <h2 style="margin-top:8px">Modèle</h2>
+      <dl class="kv" id="model"></dl>
+    </section>
+  </div>
+
+  <section style="margin-top:16px">
+    <h2>Historique de l'auto-évaluation</h2>
+    <div class="scroll"><table id="hist"></table></div>
+  </section>
+  <p class="muted">API : <a href="/docs">/docs</a> · résumé JSON : <a href="/api/summary">/api/summary</a></p>
+</main>
+<script>
+const NOMS = { blue: "Bleu", white: "Blanc", red: "Rouge" };
+const STATUTS = { ready: "prêt", busy: "en cours", initializing: "initialisation", starting: "démarrage", error: "erreur" };
+const $ = (id) => document.getElementById(id);
+const pct = (v) => v == null ? "–" : Math.round(v * 100) + " %";
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const jour = (iso, opts = { weekday: "short", day: "numeric", month: "short" }) =>
+  iso ? new Date(iso + "T12:00:00").toLocaleDateString("fr-FR", opts) : "–";
+const dt = (iso) => iso ? new Date(iso).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "short" }) : "–";
+const dot = (c, small) => `<span class="dot ${c || "none"} ${small ? "small" : ""}"></span>`;
+
+function carte(lbl, d) {
+  if (!d) return `<div class="day"><div class="lbl">${lbl}</div><div class="date">–</div></div>`;
+  const p = d.probabilities || {};
+  const barre = d.source === "model" ? `<div class="bar">${["blue", "white", "red"]
+      .map((c) => `<span class="${c}" style="width:${(p[c] || 0) * 100}%"></span>`).join("")}</div>
+    <div class="probs">${["blue", "white", "red"].filter((c) => p[c] > 0).map((c) => `${NOMS[c]} ${pct(p[c])}`).join(" · ")}</div>` : "";
+  const src = d.source === "rte" || d.source === undefined ? "officielle RTE" : "prévision";
+  return `<div class="day"><div class="lbl">${lbl}</div><div class="date">${jour(d.date)}</div>
+    <span class="pill">${dot(d.color)}${d.color ? NOMS[d.color] : "inconnue"}</span>${barre}
+    <div class="src">${src}</div></div>`;
+}
+
+function ligneTaux(nom, b) {
+  const h = (k) => b.by_horizon[k];
+  const cell = (x) => `<td class="num">${pct(x.rate)}<br><span class="muted">${x.correct}/${x.total}</span></td>`;
+  return `<tr><td>${nom}</td>${cell(b)}${cell(h("J+2"))}${cell(h("J+3"))}${cell(h("J+4"))}</tr>`;
+}
+
+async function charger() {
+  try {
+    const [s, hist] = await Promise.all([
+      fetch("/api/summary").then((r) => r.json()),
+      fetch("/api/history?days=30").then((r) => r.json()),
+    ]);
+    $("err").textContent = "";
+    const st = s.app.status;
+    $("status").textContent = STATUTS[st] || st;
+    $("status").className = "chip " + st;
+    $("status").title = s.app.message || "";
+    $("issued").textContent = s.forecast_issued_at ? "prévision du " + dt(s.forecast_issued_at) : s.app.message;
+
+    const t = s.today ? { ...s.today, source: "rte" } : null;
+    $("days").innerHTML = carte("Aujourd'hui", t) + carte("Demain", s.tomorrow)
+      + s.forecast.map((d) => carte("J+" + d.horizon, d)).join("");
+
+    const a = s.accuracy;
+    $("rate-all").textContent = pct(a.overall.rate);
+    $("rate-all-sub").textContent = a.overall.total ? `${a.overall.correct} justes sur ${a.overall.total} prévisions vérifiées` : "aucune prévision vérifiée pour l'instant";
+    $("acc").innerHTML = `<tr><th>Période</th><th class="num">Tous</th><th class="num">J+2</th><th class="num">J+3</th><th class="num">J+4</th></tr>`
+      + ligneTaux("Global", a.overall) + ligneTaux("Saison", a.season) + ligneTaux("Ce mois-ci", a.month) + ligneTaux("7 derniers jours", a.last_7_days)
+      + `<tr><td>Rouges trouvés</td><td class="num" colspan="4">${a.overall.red_found.correct}/${a.overall.red_found.total}
+         · alertes rouges justes ${a.overall.red_alerts_right.correct}/${a.overall.red_alerts_right.total}</td></tr>`;
+    $("tracking").textContent = a.tracking_since ? `Suivi depuis le ${jour(a.tracking_since, { dateStyle: "long" })} · ${a.predictions_issued} prévisions émises` : "";
+
+    const k = s.stock;
+    $("stock").innerHTML = k ? `Saison ${k.season}<br>
+      Blancs : <b>${k.white_left}</b> / ${k.white_total}<div class="stockbar"><span style="width:${100 * k.white_left / k.white_total}%;background:var(--white-border)"></span></div>
+      Rouges : <b>${k.red_left}</b> / ${k.red_total}<div class="stockbar"><span style="width:${100 * k.red_left / k.red_total}%;background:var(--red)"></span></div>` : "–";
+
+    const m = s.model;
+    const val = m ? Object.entries(m.validation_winter_net_load_error || {}).filter(([h]) => h !== "J+1")
+      .map(([h, v]) => `${h} ${v == null ? "–" : (v * 100).toFixed(1) + " %"}`).join(" · ") : "";
+    $("model").innerHTML = m ? `
+      <dt>Entraîné le</dt><dd>${dt(m.trained_at)}</dd>
+      <dt>Données</dt><dd>${jour(m.data_from, { dateStyle: "short" })} → ${jour(m.data_to, { dateStyle: "short" })} (${m.training_days} jours)</dd>
+      <dt>Erreur conso.</dt><dd title="Erreur moyenne sur la consommation nette en hiver, 12 derniers mois, météo observée">${val}</dd>
+      <dt>Réentraînement</dt><dd>tous les ${s.app.retrain_every_days} jours</dd>
+      <dt>Prochaine prévision</dt><dd>${dt(s.app.next_daily_run)}</dd>
+      <dt>Dernière exécution</dt><dd>${dt(s.app.last_daily_run)}</dd>
+      <dt>Règle des rouges</dt><dd class="muted">${esc(m.red_rule)}</dd>
+      <dt>Version</dt><dd>${esc(s.app.version)}</dd>` : `<dt>État</dt><dd>${esc(s.app.message)}</dd>`;
+
+    const cell = (p, vrai) => {
+      if (!p) return `<td>–</td>`;
+      const marque = vrai ? (p.color === vrai ? `<span class="ok">✓</span>` : `<span class="ko">✗</span>`) : "";
+      return `<td>${dot(p.color, true)} ${marque}</td>`;
+    };
+    $("hist").innerHTML = `<tr><th>Jour</th><th>Réel</th><th>Prévu à J-2</th><th>J-3</th><th>J-4</th></tr>`
+      + (hist.length ? hist.map((h) => `<tr><td>${jour(h.date)}</td><td>${dot(h.actual, true)} ${h.actual ? NOMS[h.actual] : "à venir"}</td>
+        ${cell(h.predictions["J+2"], h.actual)}${cell(h.predictions["J+3"], h.actual)}${cell(h.predictions["J+4"], h.actual)}</tr>`).join("")
+        : `<tr><td colspan="5" class="muted">Pas encore de prévision enregistrée : la première est faite à ${esc(s.app.forecast_time)}.</td></tr>`);
+  } catch (e) {
+    $("err").textContent = "API injoignable : " + e;
+  }
+}
+
+let jeton = null;
+try { jeton = localStorage.getItem("tempo-ai-token"); } catch (e) {}
+$("refresh").onclick = async () => {
+  $("refresh").disabled = true;
+  try {
+    let r = await fetch("/api/forecast?refresh=true", { headers: jeton ? { Authorization: "Bearer " + jeton } : {} });
+    if (r.status === 401) {
+      jeton = prompt("Jeton de l'API (TEMPO_API_TOKEN) :");
+      try { localStorage.setItem("tempo-ai-token", jeton); } catch (e) {}
+      r = await fetch("/api/forecast?refresh=true", { headers: { Authorization: "Bearer " + jeton } });
+    }
+    if (!r.ok) $("err").textContent = "Recalcul impossible : " + ((await r.json()).detail || r.status);
+  } finally {
+    $("refresh").disabled = false;
+    charger();
+  }
+};
+charger();
+setInterval(charger, 5 * 60 * 1000);
+</script>
+</body>
+</html>
