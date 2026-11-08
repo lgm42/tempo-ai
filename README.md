@@ -154,6 +154,15 @@ python collecte_recherche.py   # history + archived forecasts (cache in train/da
 python backtest.py             # replay → resultats/rejeu.csv, resultats/scores.csv
 ```
 
+Unit tests run without network or downloaded data: RTE rules, self-evaluation statistics, forecast
+chaining and the API. CI runs them on every push, and the image is built only when they pass.
+
+```bash
+cd soft
+pip install -r requirements-dev.txt
+pytest
+```
+
 ## Data and credits
 
 - [RTE eCO2mix](https://odre.opendatasoft.com) (Etalab open licence)
