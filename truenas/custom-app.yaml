@@ -3,7 +3,7 @@
 # 2. Remplacer <pool> ci-dessous, choisir le port, puis coller ce fichier.
 services:
   tempo-ai:
-    image: ghcr.io/lgm42/tempo-ai:0.1.0
+    image: ghcr.io/lgm42/tempo-ai:0.1.0@sha256:9a4b6f3aaa05845cae54654f4cc34d5d4fc42bfccb8209046af5f32d0e780c5f
     user: "568:568"
     restart: unless-stopped
     ports:
